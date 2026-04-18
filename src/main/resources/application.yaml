@@ -1,0 +1,40 @@
+spring:
+  config:
+    import: optional:file:.env.properties
+  application:
+    name: controle-veiculo
+  security:
+    user:
+      name: ${SECURITY_USER}
+      password: ${SECURITY_PASSWORD}
+  datasource:
+    url: ${DB_URL}
+    driver-class-name: ${DB_DRIVER}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED}
+      path: /h2-console
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO}
+    show-sql: ${JPA_SHOW_SQL}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      cotacaoCB:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        record-exceptions:
+          - java.lang.Exception
+      cotacaoFallbackCB:
+        sliding-window-size: 3
+        failure-rate-threshold: 100
+        wait-duration-in-open-state: 10s
+        record-exceptions:
+          - java.lang.Exception
