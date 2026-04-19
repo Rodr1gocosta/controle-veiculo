@@ -5,11 +5,13 @@ import com.rodr1gocosta.controle_veiculo.repository.VeiculoRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Configuration
+@Profile("dev")
 public class DataMocker {
 
     @Bean
