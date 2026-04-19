@@ -101,4 +101,63 @@ class GlobalExceptionHandlerTest {
         assertThat(result.getDetail()).isEqualTo("Serviço de cotação do dólar indisponível. Tente novamente mais tarde.");
         assertThat(result.getType()).isEqualTo(URI.create("/errors/cotacao-indisponivel"));
     }
+
+    @Test
+    @DisplayName("deve retornar ProblemDetail 409 quando PlacaDuplicadaException é lançada")
+    void handlePlacaDuplicada_deveRetornar409() {
+        // Arrange
+        PlacaDuplicadaException exception = new PlacaDuplicadaException("ABC-1234");
+
+        // Act
+        ProblemDetail result = globalExceptionHandler.handlePlacaDuplicada(exception);
+
+        // Assert
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+        assertThat(result.getTitle()).isEqualTo("Placa duplicada");
+        assertThat(result.getDetail()).isEqualTo("Já existe um veículo cadastrado com a placa: ABC-1234");
+        assertThat(result.getType()).isEqualTo(URI.create("/errors/placa-duplicada"));
+    }
+
+    @Test
+    @DisplayName("payload de erro deve conter status, title, detail e type")
+    void payload_deveConterCamposObrigatorios() {
+        // Arrange
+        UUID veiculoId = UUID.randomUUID();
+        VeiculoNotFoundException exception = new VeiculoNotFoundException(veiculoId);
+
+        // Act
+        ProblemDetail result = globalExceptionHandler.handleVeiculoNotFound(exception);
+
+        // Assert — verifica campos obrigatórios do RFC 7807
+        assertThat(result.getStatus()).isNotNull();
+        assertThat(result.getTitle()).isNotBlank();
+        assertThat(result.getDetail()).isNotBlank();
+        assertThat(result.getType()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("payload de validação deve conter mapa de erros por campo")
+    void payloadValidacao_deveConterMapaDeErrosPorCampo() {
+        // Arrange
+        BindingResult bindingResult = mock(BindingResult.class);
+        when(bindingResult.getFieldErrors()).thenReturn(List.of(
+                new FieldError("veiculoRequest", "marca", "não deve estar vazio"),
+                new FieldError("veiculoRequest", "preco", "deve ser maior que zero"),
+                new FieldError("veiculoRequest", "placa", "não deve estar vazio")
+        ));
+        MethodArgumentNotValidException exception = new MethodArgumentNotValidException(null, bindingResult);
+
+        // Act
+        ProblemDetail result = globalExceptionHandler.handleValidation(exception);
+
+        // Assert
+        assertThat(result.getStatus()).isEqualTo(422);
+        @SuppressWarnings("unchecked")
+        Map<String, String> errors = (Map<String, String>) result.getProperties().get("errors");
+        assertThat(errors).hasSize(3);
+        assertThat(errors).containsKeys("marca", "preco", "placa");
+        assertThat(errors.get("marca")).isEqualTo("não deve estar vazio");
+        assertThat(errors.get("preco")).isEqualTo("deve ser maior que zero");
+        assertThat(errors.get("placa")).isEqualTo("não deve estar vazio");
+    }
 }

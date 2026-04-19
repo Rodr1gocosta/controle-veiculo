@@ -2,6 +2,7 @@ package com.rodr1gocosta.controle_veiculo.service;
 
 import com.rodr1gocosta.controle_veiculo.dto.*;
 import com.rodr1gocosta.controle_veiculo.domain.Veiculo;
+import com.rodr1gocosta.controle_veiculo.exception.PlacaDuplicadaException;
 import com.rodr1gocosta.controle_veiculo.exception.VeiculoNotFoundException;
 import com.rodr1gocosta.controle_veiculo.repository.VeiculoRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,10 @@ public class VeiculoService {
 
     @Transactional
     public VeiculoResponse criar(VeiculoRequest request) {
+        if (veiculoRepository.existsByPlaca(request.placa())) {
+            throw new PlacaDuplicadaException(request.placa());
+        }
+
         Veiculo veiculo = Veiculo.builder()
                 .marca(request.marca())
                 .ano(request.ano())
@@ -64,6 +69,10 @@ public class VeiculoService {
     public VeiculoResponse atualizar(UUID id, VeiculoRequest request) {
         Veiculo veiculo = veiculoRepository.findById(id)
                 .orElseThrow(() -> new VeiculoNotFoundException(id));
+
+        if (veiculoRepository.existsByPlacaAndIdNot(request.placa(), id)) {
+            throw new PlacaDuplicadaException(request.placa());
+        }
 
         veiculo.setMarca(request.marca());
         veiculo.setAno(request.ano());
@@ -83,7 +92,12 @@ public class VeiculoService {
         if (request.ano() != null)      veiculo.setAno(request.ano());
         if (request.cor() != null)      veiculo.setCor(request.cor());
         if (request.preco() != null)    veiculo.setPreco(calculaPrecoEmDolar(request.preco()));
-        if (request.placa() != null)    veiculo.setPlaca(request.placa());
+        if (request.placa() != null) {
+            if (veiculoRepository.existsByPlacaAndIdNot(request.placa(), id)) {
+                throw new PlacaDuplicadaException(request.placa());
+            }
+            veiculo.setPlaca(request.placa());
+        }
 
         return VeiculoResponse.from(veiculoRepository.save(veiculo));
     }

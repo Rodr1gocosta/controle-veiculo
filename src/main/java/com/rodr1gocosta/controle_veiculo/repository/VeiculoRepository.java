@@ -16,6 +16,9 @@ import java.util.UUID;
 @Repository
 public interface VeiculoRepository extends JpaRepository<Veiculo, UUID>, JpaSpecificationExecutor<Veiculo> {
 
+    boolean existsByPlaca(String placa);
+    boolean existsByPlacaAndIdNot(String placa, UUID id);
+
 
 
     @Query("SELECT v FROM Veiculo v WHERE " +

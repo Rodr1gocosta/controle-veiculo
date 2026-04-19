@@ -42,6 +42,14 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(PlacaDuplicadaException.class)
+    public ProblemDetail handlePlacaDuplicada(PlacaDuplicadaException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Placa duplicada");
+        problem.setType(URI.create("/errors/placa-duplicada"));
+        return problem;
+    }
+
     @ExceptionHandler(CotacaoIndisponivelException.class)
     public ProblemDetail handleCotacaoIndisponivel(CotacaoIndisponivelException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());

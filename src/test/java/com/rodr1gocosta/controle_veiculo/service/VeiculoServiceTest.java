@@ -2,6 +2,7 @@ package com.rodr1gocosta.controle_veiculo.service;
 
 import com.rodr1gocosta.controle_veiculo.domain.Veiculo;
 import com.rodr1gocosta.controle_veiculo.dto.*;
+import com.rodr1gocosta.controle_veiculo.exception.PlacaDuplicadaException;
 import com.rodr1gocosta.controle_veiculo.exception.VeiculoNotFoundException;
 import com.rodr1gocosta.controle_veiculo.repository.VeiculoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,6 +86,73 @@ class VeiculoServiceTest {
         assertThat(resultado.getContent()).hasSize(1);
         assertThat(resultado.getContent().get(0).marca()).isEqualTo("Toyota");
         verify(veiculoRepository).findByMarcaOrAnoOrCor(eq("Toyota"), eq(2022), eq("Prata"), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("deve filtrar veículos por marca apenas (ano e cor nulos)")
+    void listar_deveFiltrarSomentePorMarca() {
+        // Arrange
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Veiculo> pageEsperada = new PageImpl<>(List.of(veiculoFixture));
+        when(veiculoRepository.findByMarcaOrAnoOrCor(eq("Toyota"), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(pageEsperada);
+
+        // Act
+        Page<VeiculoResponse> resultado = veiculoService.listar("Toyota", null, null, pageable);
+
+        // Assert
+        assertThat(resultado.getContent()).hasSize(1);
+        verify(veiculoRepository).findByMarcaOrAnoOrCor(eq("Toyota"), isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("deve filtrar veículos por ano apenas (marca e cor nulos)")
+    void listar_deveFiltrarSomentePorAno() {
+        // Arrange
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Veiculo> pageEsperada = new PageImpl<>(List.of(veiculoFixture));
+        when(veiculoRepository.findByMarcaOrAnoOrCor(isNull(), eq(2022), isNull(), any(Pageable.class)))
+                .thenReturn(pageEsperada);
+
+        // Act
+        Page<VeiculoResponse> resultado = veiculoService.listar(null, 2022, null, pageable);
+
+        // Assert
+        assertThat(resultado.getContent()).hasSize(1);
+        verify(veiculoRepository).findByMarcaOrAnoOrCor(isNull(), eq(2022), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("deve filtrar veículos por cor apenas (marca e ano nulos)")
+    void listar_deveFiltrarSomentePorCor() {
+        // Arrange
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Veiculo> pageEsperada = new PageImpl<>(List.of(veiculoFixture));
+        when(veiculoRepository.findByMarcaOrAnoOrCor(isNull(), isNull(), eq("Prata"), any(Pageable.class)))
+                .thenReturn(pageEsperada);
+
+        // Act
+        Page<VeiculoResponse> resultado = veiculoService.listar(null, null, "Prata", pageable);
+
+        // Assert
+        assertThat(resultado.getContent()).hasSize(1);
+        verify(veiculoRepository).findByMarcaOrAnoOrCor(isNull(), isNull(), eq("Prata"), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("deve retornar lista vazia quando nenhum veículo combina com os filtros")
+    void listar_deveRetornarVazioQuandoNenhumVeiculoCombina() {
+        // Arrange
+        Pageable pageable = PageRequest.of(0, 10);
+        when(veiculoRepository.findByMarcaOrAnoOrCor(eq("Ferrari"), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        // Act
+        Page<VeiculoResponse> resultado = veiculoService.listar("Ferrari", null, null, pageable);
+
+        // Assert
+        assertThat(resultado.getContent()).isEmpty();
+        verify(veiculoRepository).findByMarcaOrAnoOrCor(eq("Ferrari"), isNull(), isNull(), any(Pageable.class));
     }
 
     @Test
